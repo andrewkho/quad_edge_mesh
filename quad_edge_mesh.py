@@ -37,14 +37,14 @@ class QEMeshBuilder (object):
                     vidx_1 = f[0]-1
                 else:
                     vidx_1 = f[ptidx+1]-1
-                qef.verts.append(vidx)
+                qef.verts.append(qem.get_vertex(vidx))
 
                 qee = qem.get_edge_by_verts(vidx, vidx_1)
                 if qee is None:
                     qee = QEEdge(qem, eidx)
                     eidx = eidx + 1
-                    qee.b_vert = vidx
-                    qee.t_vert = vidx_1
+                    qee.b_vert = qem.get_vertex(vidx)
+                    qee.t_vert = qem.get_vertex(vidx_1)
                     qee.l_face = qef
                     qem.add_edge(qee)
                 else:
@@ -90,7 +90,7 @@ class QEMesh (object):
         self._vertices = []
         self._faces = []
         self._existing_edges = {}
-        
+
     def get_vertex(self, vidx):
         """ return a QEVertex by index.
         """
@@ -150,13 +150,13 @@ class QEMesh (object):
         if type(edge) is not QEEdge:
             raise TypeError("edge must be QEEdge")
         
-        if (edge.b_vert, edge.t_vert) in self._existing_edges:
+        if (edge.b_vert.index, edge.t_vert.index) in self._existing_edges:
             raise ValueError("edge already exists!")
-        elif (edge.t_vert, edge.b_vert) in self._existing_edges:
+        elif (edge.t_vert.index, edge.b_vert.index) in self._existing_edges:
             raise ValueError("edge already exists!")
         
         self._edges.append(edge)
-        self._existing_edges[(edge.t_vert, edge.b_vert)] = edge
+        self._existing_edges[(edge.t_vert.index, edge.b_vert.index)] = edge
 
     def add_vertex(self, vert):
         """ Add a QEVertex to this QEMesh.
@@ -212,8 +212,10 @@ class QEMesh (object):
 
         # Every edge's vertices are contained in mesh
         for e in self._edges:
-            if e.b_vert >= len(self._vertices) or e.t_vert >= len(self._vertices):
-                print("e.b_vert: %d, e.t_vert: %d" % (e.b_vert, e.t_vert))
+            if (e.b_vert.index >= len(self._vertices) or
+                e.t_vert.index >= len(self._vertices)):
+                print("e.b_vert: %d, e.t_vert: %d" %
+                      (e.b_vert.index, e.t_vert.index))
                 raise ValueError("Edge's vertices aren't contained in me!")
 
         # Every edge has two faces (only for closed mesh)
@@ -229,17 +231,23 @@ class QEMesh (object):
                     continue
                 if (e.t_vert == e_other.t_vert and
                     e.b_vert == e_other.b_vert):
-                    print("e.index: %d, e_other.index: %d" % (e.index, e_other.index))
-                    print("e.b_vert: %d, e.t_vert %d" % (e.b_vert, e.t_vert))
+                    print("e.index: %d, e_other.index: %d" % (
+                            e.index, e_other.index))
+                    print("e.b_vert: %d, e.t_vert %d" % (
+                            e.b_vert.index, e.t_vert.index))
                     print("other:")
-                    print("e.b_vert: %d, e.t_vert %d" % (e_other.b_vert, e_other.t_vert))
+                    print("e.b_vert: %d, e.t_vert %d" % (
+                            e_other.b_vert.index, e_other.t_vert.index))
                     raise ValueError('Edge is duplicated!')
                 if (e.t_vert == e_other.b_vert and
                     e.b_vert == e_other.t_vert):
-                    print("e.index: %d, e_other.index: %d" % (e.index, e_other.index))
-                    print("e.b_vert: %d, e.t_vert %d" % (e.b_vert, e.t_vert))
+                    print("e.index: %d, e_other.index: %d" % (
+                            e.index, e_other.index))
+                    print("e.b_vert: %d, e.t_vert %d" % (
+                            e.b_vert.index, e.t_vert.index))
                     print("other:")
-                    print("e.b_vert: %d, e.t_vert %d" % (e_other.b_vert, e_other.t_vert))
+                    print("e.b_vert: %d, e.t_vert %d" % (
+                            e_other.b_vert.index, e_other.t_vert.index))
                     raise ValueError('Edge is duplicated!')
 
         # Successive calls to edge.next_edge will wrap around a face
@@ -333,6 +341,15 @@ class QEFace (object):
         min_coord and max_coord must not be assigned to another list in order for
         AABB to work properly!!!
         """
+        
+        for vert in self.verts:
+            self.min_coord[0] = min(self.min_coord[0], vert[0])
+            self.min_coord[1] = min(self.min_coord[1], vert[1])
+            self.min_coord[2] = min(self.min_coord[2], vert[2])
+            self.max_coord[0] = max(self.max_coord[0], vert[0])
+            self.max_coord[1] = max(self.max_coord[1], vert[1])
+            self.max_coord[2] = max(self.max_coord[2], vert[2])
+            
         self.min_coord[0] = min(self.verts[0][0], self.verts[1][0], self.verts[2][0])
         self.min_coord[1] = min(self.verts[0][1], self.verts[1][1], self.verts[2][1])
         self.min_coord[2] = min(self.verts[0][2], self.verts[1][2], self.verts[2][2])
@@ -361,6 +378,6 @@ def run_qemesh_test (fname):
     print("done!")
 
 if __name__ == "__main__":
-    run_qemesh_test('testMeshes/box.obj')
-    run_qemesh_test('testMeshes/bbox.obj')
+    run_qemesh_test('quad_edge_mesh/testMeshes/box.obj')
+    run_qemesh_test('quad_edge_mesh/testMeshes/bbox.obj')
 
