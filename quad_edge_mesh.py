@@ -1,6 +1,6 @@
 from time import time
 
-import obj_reader
+from . import obj_reader
 
 class QEMeshBuilder (object):
     """ Defalut mesh builder.
@@ -318,6 +318,7 @@ class QEFace (object):
 
     Holds pointers to parent (mesh), unique index in parent mesh (index),
     and a list of QEVerts and QEEdges which are adjacent to this face.
+
     """
     def __init__(self, parent_mesh, index):
         self.mesh = parent_mesh
@@ -328,10 +329,16 @@ class QEFace (object):
         self.max_coord = [0, 0, 0]
 
     def update_bounding_box(self):
-        """ Update my bounding box defined by self.min_coord, self.max_coord. """
+        """ Update my bounding box defined by self.min_coord, self.max_coord.
+        min_coord and max_coord must not be assigned to another list in order for
+        AABB to work properly!!!
+        """
         self.min_coord[0] = min(self.verts[0][0], self.verts[1][0], self.verts[2][0])
         self.min_coord[1] = min(self.verts[0][1], self.verts[1][1], self.verts[2][1])
         self.min_coord[2] = min(self.verts[0][2], self.verts[1][2], self.verts[2][2])
+        self.max_coord[0] = max(self.verts[0][0], self.verts[1][0], self.verts[2][0])
+        self.max_coord[1] = max(self.verts[0][1], self.verts[1][1], self.verts[2][1])
+        self.max_coord[2] = max(self.verts[0][2], self.verts[1][2], self.verts[2][2])
         
 
 def run_qemesh_test (fname):
