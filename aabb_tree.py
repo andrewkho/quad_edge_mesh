@@ -33,9 +33,7 @@ class AABBTree (object):
     def update_bbs(self):
         """ Update this tree's AABB's. This will result
         in a higher degree of overlap.
-
-        TODO: In order for this to work, face max/min must be updated
-        first. This means vertices need to be tracked. """
+        """
         self._tree.update_bbs()
 
 class AABBNode (object):
