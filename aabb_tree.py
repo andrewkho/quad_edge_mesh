@@ -1,6 +1,7 @@
 import sys
 
-from . import quad_edge_mesh
+#from . import quad_edge_mesh
+from .quad_edge_mesh import QEMesh
 
 class AABBTree (object):
     """ An Axis-aligned bounding box tree.
@@ -11,11 +12,11 @@ class AABBTree (object):
         """ Construct an AABB Tree for this mesh.
         qemesh is a quad_edge_mesh.QEMesh.
         """
-        if type(qemesh) is not quad_edge_mesh.QEMesh:
+        if not isinstance(qemesh, QEMesh):
             raise TypeError("qemesh must be of type QEMesh!")
         
         # Construct the tree
-        self._tree = AABBNode(list(qemesh.faces))
+        self._tree = AABBNode(list(qemesh._faces))
 
     def collides_with(self, other_face):
         """ Search tree for collision """
@@ -25,7 +26,7 @@ class AABBTree (object):
 
     def collides_with_tree(self, other_tree):
         """ Return a list of pairs of faces whose aabb's collide """
-        if type(other_tree) is not AABBTree:
+        if not isinstance(other_tree, AABBTree):
             raise TypeError("Can only collide with other AABBTree's")
         return self._tree.collides_with_tree(other_tree._tree)
 
@@ -171,8 +172,14 @@ class AABBNode (object):
         on children. """
 
         if self.is_leaf():
-            self.max_pt = self.leaf.max
-            self.min_pt = self.leaf.min
+            self.max_pt = self.leaf.max_coord
+            self.min_pt = self.leaf.min_coord
+
+            ### DEBUG
+            # print ("maxpos: (" + str(self.max_pt) +")")
+            # print ("minpos: (" + str(self.min_pt) +")")
+            ### /DEBUG
+
             return
 
         self.left_node.update_bbs()

@@ -1,4 +1,5 @@
 from time import time
+import sys
 
 from . import obj_reader
 
@@ -91,6 +92,10 @@ class QEMesh (object):
         self._faces = []
         self._existing_edges = {}
 
+    def update_bounding_boxes(self):
+        for face in self._faces:
+            face.update_bounding_box()
+
     def get_vertex(self, vidx):
         """ return a QEVertex by index.
         """
@@ -133,7 +138,7 @@ class QEMesh (object):
 
         Raises TypeError if face is not QEFace.
         """
-        if type(face) is not QEFace:
+        if not isinstance(face, QEFace):
             raise TypeError("face must be QEFace")
         
         self._faces.append(face)
@@ -147,12 +152,16 @@ class QEMesh (object):
         Internally, edge is appended to _edges list, and added
         to dictionary _existing_edges with key 2-tuple (edge.t_vert, edge.b_vert).
         """
-        if type(edge) is not QEEdge:
+        if not isinstance(edge, QEEdge):
             raise TypeError("edge must be QEEdge")
         
         if (edge.b_vert.index, edge.t_vert.index) in self._existing_edges:
+            print("edge.b_vert.index: %d edge.t_vert.index: %d" %
+                  (edge.b_vert.index, edge.t_vert.index))
             raise ValueError("edge already exists!")
         elif (edge.t_vert.index, edge.b_vert.index) in self._existing_edges:
+            print("edge.b_vert.index: %d edge.t_vert.index: %d" %
+                  (edge.b_vert.index, edge.t_vert.index))
             raise ValueError("edge already exists!")
         
         self._edges.append(edge)
@@ -164,7 +173,7 @@ class QEMesh (object):
         Raises TypeError if vert isn't QEVertex.
         Raises ValueError if vert already exists.
         """
-        if type(vert) is not QEVertex:
+        if not isinstance(vert, QEVertex):
             raise TypeError("vert must be QEVertex!")
 
         if vert in self._vertices:
@@ -341,21 +350,28 @@ class QEFace (object):
         min_coord and max_coord must not be assigned to another list in order for
         AABB to work properly!!!
         """
-        
-        for vert in self.verts:
-            self.min_coord[0] = min(self.min_coord[0], vert[0])
-            self.min_coord[1] = min(self.min_coord[1], vert[1])
-            self.min_coord[2] = min(self.min_coord[2], vert[2])
-            self.max_coord[0] = max(self.max_coord[0], vert[0])
-            self.max_coord[1] = max(self.max_coord[1], vert[1])
-            self.max_coord[2] = max(self.max_coord[2], vert[2])
-            
-        self.min_coord[0] = min(self.verts[0][0], self.verts[1][0], self.verts[2][0])
-        self.min_coord[1] = min(self.verts[0][1], self.verts[1][1], self.verts[2][1])
-        self.min_coord[2] = min(self.verts[0][2], self.verts[1][2], self.verts[2][2])
-        self.max_coord[0] = max(self.verts[0][0], self.verts[1][0], self.verts[2][0])
-        self.max_coord[1] = max(self.verts[0][1], self.verts[1][1], self.verts[2][1])
-        self.max_coord[2] = max(self.verts[0][2], self.verts[1][2], self.verts[2][2])
+
+        # self.min_coord[0] = sys.float_info.max
+        # self.min_coord[1] = sys.float_info.max
+        # self.min_coord[2] = sys.float_info.max
+        # self.max_coord[0] = sys.float_info.min
+        # self.max_coord[1] = sys.float_info.min
+        # self.max_coord[2] = sys.float_info.min
+        # for vert in self.verts:
+        #     self.min_coord[0] = min(self.min_coord[0], vert.pos[0])
+        #     self.min_coord[1] = min(self.min_coord[1], vert.pos[1])
+        #     self.min_coord[2] = min(self.min_coord[2], vert.pos[2])
+        #     self.max_coord[0] = max(self.max_coord[0], vert.pos[0])
+        #     self.max_coord[1] = max(self.max_coord[1], vert.pos[1])
+        #     self.max_coord[2] = max(self.max_coord[2], vert.pos[2])
+
+        # TODO: this only works for tris. Above code is broken somehow
+        self.min_coord[0] = min(self.verts[0].pos[0], self.verts[1].pos[0], self.verts[2].pos[0])
+        self.min_coord[1] = min(self.verts[0].pos[1], self.verts[1].pos[1], self.verts[2].pos[1])
+        self.min_coord[2] = min(self.verts[0].pos[2], self.verts[1].pos[2], self.verts[2].pos[2])
+        self.max_coord[0] = max(self.verts[0].pos[0], self.verts[1].pos[0], self.verts[2].pos[0])
+        self.max_coord[1] = max(self.verts[0].pos[1], self.verts[1].pos[1], self.verts[2].pos[1])
+        self.max_coord[2] = max(self.verts[0].pos[2], self.verts[1].pos[2], self.verts[2].pos[2])
         
 
 def run_qemesh_test (fname):
