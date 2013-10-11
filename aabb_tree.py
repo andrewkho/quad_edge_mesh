@@ -28,7 +28,10 @@ class AABBTree (object):
         """ Return a list of pairs of faces whose aabb's collide """
         if not isinstance(other_tree, AABBTree):
             raise TypeError("Can only collide with other AABBTree's")
-        return self._tree.collides_with_tree(other_tree._tree)
+        #return self._tree.collides_with_tree(other_tree._tree)
+        collision_pairs = []
+        self._tree.collides_with_tree(other_tree._tree, collision_pairs)
+        return collision_pairs
 
     def update_bbs(self):
         """ Update this tree's AABB's. This will result
@@ -50,6 +53,7 @@ class AABBNode (object):
         """
         
         if len(faces) is 1:
+            self.is_leaf = True
             self.leaf = faces[0]
             self.left_node = None
             self.right_node = None
@@ -57,6 +61,7 @@ class AABBNode (object):
             self.min_pt = faces[0].min_coord
             return
         
+        self.is_leaf = False
         # First compute BB for this set of faces
         sysmin = sys.float_info.min
         sysmax = sys.float_info.max
@@ -122,8 +127,8 @@ class AABBNode (object):
         #     self.max_pt[i] = max(self.left_node.max_pt[i],
         #                       self.right_node.max_pt[i])
 
-    def is_leaf(self):
-        return self.left_node is None and self.right_node is None
+    # def is_leaf(self):
+    #     return self.left_node is None and self.right_node is None
 
     def collides_with(self, pt_max, pt_min):
         if (self.min_pt[0] > pt_max[0] or self.max_pt[0] < pt_min[0]): 
@@ -139,39 +144,68 @@ class AABBNode (object):
         return (self.left_node.collides_with(pt_max, pt_min) or
                 self.right_node.collides_with(pt_max, pt_min))
 
-    def collides_with_tree(self, other_tree):
+    def collides_with_tree(self, other_tree, pairs):
         if (self.min_pt[0] > other_tree.max_pt[0] or
             self.max_pt[0] < other_tree.min_pt[0]): 
-            return []
+            return
         if (self.min_pt[1] > other_tree.max_pt[1] or
             self.max_pt[1] < other_tree.min_pt[1]): 
-            return []
+            return
         if (self.min_pt[2] > other_tree.max_pt[2] or
             self.max_pt[2] < other_tree.min_pt[2]): 
-            return []
+            return
 
-        if self.is_leaf():
-            if other_tree.is_leaf():
-                return [(self.leaf, other_tree.leaf)]
+        if self.is_leaf:
+            if other_tree.is_leaf:
+                pairs.append((self.leaf, other_tree.leaf))
+                return
             else:
-                return self.collides_with_tree(other_tree.left_node) + \
-                    self.collides_with_tree(other_tree.right_node)
-        elif other_tree.is_leaf():
-            return self.left_node.collides_with_tree(other_tree) + \
-                self.right_node.collides_with_tree(other_tree)
+                self.collides_with_tree(other_tree.left_node, pairs)
+                self.collides_with_tree(other_tree.right_node, pairs)
+                return
+        elif other_tree.is_leaf:
+            self.left_node.collides_with_tree(other_tree, pairs)
+            self.right_node.collides_with_tree(other_tree, pairs)
+            return
         else:
-            return self.left_node.collides_with_tree(other_tree.left_node) + \
-                self.left_node.collides_with_tree(other_tree.right_node) + \
-                self.right_node.collides_with_tree(other_tree.left_node) + \
-                self.right_node.collides_with_tree(other_tree.right_node)
+            self.left_node.collides_with_tree(other_tree.left_node, pairs)
+            self.left_node.collides_with_tree(other_tree.right_node, pairs)
+            self.right_node.collides_with_tree(other_tree.left_node, pairs)
+            self.right_node.collides_with_tree(other_tree.right_node, pairs)
+            return
+        
+        # if (self.min_pt[0] > other_tree.max_pt[0] or
+        #     self.max_pt[0] < other_tree.min_pt[0]): 
+        #     return []
+        # if (self.min_pt[1] > other_tree.max_pt[1] or
+        #     self.max_pt[1] < other_tree.min_pt[1]): 
+        #     return []
+        # if (self.min_pt[2] > other_tree.max_pt[2] or
+        #     self.max_pt[2] < other_tree.min_pt[2]): 
+        #     return []
+
+        # if self.is_leaf():
+        #     if other_tree.is_leaf():
+        #         return [(self.leaf, other_tree.leaf)]
+        #     else:
+        #         return self.collides_with_tree(other_tree.left_node) + \
+        #             self.collides_with_tree(other_tree.right_node)
+        # elif other_tree.is_leaf():
+        #     return self.left_node.collides_with_tree(other_tree) + \
+        #         self.right_node.collides_with_tree(other_tree)
+        # else:
+        #     return self.left_node.collides_with_tree(other_tree.left_node) + \
+        #         self.left_node.collides_with_tree(other_tree.right_node) + \
+        #         self.right_node.collides_with_tree(other_tree.left_node) + \
+        #         self.right_node.collides_with_tree(other_tree.right_node)
 
     def update_bbs(self):
         """ Recursively update this bounding box and recurisvely call
         on children. """
 
-        if self.is_leaf():
-            self.max_pt = self.leaf.max_coord
-            self.min_pt = self.leaf.min_coord
+        if self.is_leaf:
+            # self.max_pt = self.leaf.max_coord
+            # self.min_pt = self.leaf.min_coord
 
             ### DEBUG
             # print ("maxpos: (" + str(self.max_pt) +")")
@@ -202,3 +236,7 @@ class AABBNode (object):
         #     self.max_pt[i] = max(self.left_node.max_pt[i],
         #                          self.right_node.max_pt[i])
 
+class dict_aabb_tree (object):
+    """ AABB Tree implementation using built in dictionary.
+    """
+    

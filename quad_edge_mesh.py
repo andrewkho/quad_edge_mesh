@@ -286,6 +286,9 @@ class QEVertex (object):
         self.index = index
         self.pos = [0, 0, 0]
 
+    def get_pos(self):
+        return self.pos
+
 
 class QEEdge (object):
     """ A Quad-edge edge.
@@ -366,13 +369,34 @@ class QEFace (object):
         #     self.max_coord[2] = max(self.max_coord[2], vert.pos[2])
 
         # TODO: this only works for tris. Above code is broken somehow
-        self.min_coord[0] = min(self.verts[0].pos[0], self.verts[1].pos[0], self.verts[2].pos[0])
-        self.min_coord[1] = min(self.verts[0].pos[1], self.verts[1].pos[1], self.verts[2].pos[1])
-        self.min_coord[2] = min(self.verts[0].pos[2], self.verts[1].pos[2], self.verts[2].pos[2])
-        self.max_coord[0] = max(self.verts[0].pos[0], self.verts[1].pos[0], self.verts[2].pos[0])
-        self.max_coord[1] = max(self.verts[0].pos[1], self.verts[1].pos[1], self.verts[2].pos[1])
-        self.max_coord[2] = max(self.verts[0].pos[2], self.verts[1].pos[2], self.verts[2].pos[2])
+        self.min_coord[0] = min(self.verts[0].pos[0],
+                                self.verts[1].pos[0],
+                                self.verts[2].pos[0])
+        self.min_coord[1] = min(self.verts[0].pos[1],
+                                self.verts[1].pos[1],
+                                self.verts[2].pos[1])
+        self.min_coord[2] = min(self.verts[0].pos[2],
+                                self.verts[1].pos[2],
+                                self.verts[2].pos[2])
+        self.max_coord[0] = max(self.verts[0].pos[0],
+                                self.verts[1].pos[0],
+                                self.verts[2].pos[0])
+        self.max_coord[1] = max(self.verts[0].pos[1],
+                                self.verts[1].pos[1],
+                                self.verts[2].pos[1])
+        self.max_coord[2] = max(self.verts[0].pos[2],
+                                self.verts[1].pos[2],
+                                self.verts[2].pos[2])
         
+        # v0 = self.verts[0].get_pos()
+        # v1 = self.verts[1].get_pos()
+        # v2 = self.verts[2].get_pos()
+        # self.min_coord[0] = min(v0[0], v1[0], v2[0])
+        # self.min_coord[1] = min(v0[1], v1[1], v2[1])
+        # self.min_coord[2] = min(v0[2], v1[2], v2[2])
+        # self.max_coord[0] = max(v0[0], v1[0], v2[0])
+        # self.max_coord[1] = max(v0[1], v1[1], v2[1])
+        # self.max_coord[2] = max(v0[2], v1[2], v2[2])
 
 def run_qemesh_test (fname):
     face_list = obj_reader.read_faces_to_list(fname)
