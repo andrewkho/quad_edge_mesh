@@ -347,13 +347,20 @@ class QEFace (object):
         self.edges = []
         self.min_coord = [0, 0, 0]
         self.max_coord = [0, 0, 0]
+        self.bb_updated = True
 
     def update_bounding_box(self):
         """ Update my bounding box defined by self.min_coord, self.max_coord.
         min_coord and max_coord must not be assigned to another list in order for
         AABB to work properly!!!
         """
-
+        if (not self.verts[0].is_updated and
+            not self.verts[1].is_updated and
+            not self.verts[2].is_updated):
+            self.bb_updated = False
+            return
+        
+        self.bb_updated = True
         # self.min_coord[0] = sys.float_info.max
         # self.min_coord[1] = sys.float_info.max
         # self.min_coord[2] = sys.float_info.max

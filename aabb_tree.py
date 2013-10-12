@@ -1,5 +1,7 @@
 import sys
 
+#from multiprocessing import Pool
+
 #from . import quad_edge_mesh
 from .quad_edge_mesh import QEMesh
 
@@ -31,6 +33,10 @@ class AABBTree (object):
         #return self._tree.collides_with_tree(other_tree._tree)
         collision_pairs = []
         self._tree.collides_with_tree(other_tree._tree, collision_pairs)
+        # pool = Pool(processes = 4)
+        # result = pool.apply_async(self._tree.collides_with_tree_append, (other_tree._tree))
+                                                                         
+
         return collision_pairs
 
     def update_bbs(self):
@@ -108,7 +114,6 @@ class AABBNode (object):
         self.left_node = AABBNode(left_sorted_faces)
         self.right_node = AABBNode(right_sorted_faces)
 
-
         self.min_pt[0] = min(self.left_node.min_pt[0],
                              self.right_node.min_pt[0])
         self.min_pt[1] = min(self.left_node.min_pt[1],
@@ -173,31 +178,31 @@ class AABBNode (object):
             self.right_node.collides_with_tree(other_tree.left_node, pairs)
             self.right_node.collides_with_tree(other_tree.right_node, pairs)
             return
-        
-        # if (self.min_pt[0] > other_tree.max_pt[0] or
-        #     self.max_pt[0] < other_tree.min_pt[0]): 
-        #     return []
-        # if (self.min_pt[1] > other_tree.max_pt[1] or
-        #     self.max_pt[1] < other_tree.min_pt[1]): 
-        #     return []
-        # if (self.min_pt[2] > other_tree.max_pt[2] or
-        #     self.max_pt[2] < other_tree.min_pt[2]): 
-        #     return []
+    def collides_with_tree_append(self, other_tree):
+        if (self.min_pt[0] > other_tree.max_pt[0] or
+            self.max_pt[0] < other_tree.min_pt[0]): 
+            return []
+        if (self.min_pt[1] > other_tree.max_pt[1] or
+            self.max_pt[1] < other_tree.min_pt[1]): 
+            return []
+        if (self.min_pt[2] > other_tree.max_pt[2] or
+            self.max_pt[2] < other_tree.min_pt[2]): 
+            return []
 
-        # if self.is_leaf():
-        #     if other_tree.is_leaf():
-        #         return [(self.leaf, other_tree.leaf)]
-        #     else:
-        #         return self.collides_with_tree(other_tree.left_node) + \
-        #             self.collides_with_tree(other_tree.right_node)
-        # elif other_tree.is_leaf():
-        #     return self.left_node.collides_with_tree(other_tree) + \
-        #         self.right_node.collides_with_tree(other_tree)
-        # else:
-        #     return self.left_node.collides_with_tree(other_tree.left_node) + \
-        #         self.left_node.collides_with_tree(other_tree.right_node) + \
-        #         self.right_node.collides_with_tree(other_tree.left_node) + \
-        #         self.right_node.collides_with_tree(other_tree.right_node)
+        if self.is_leaf():
+            if other_tree.is_leaf():
+                return [(self.leaf, other_tree.leaf)]
+            else:
+                return self.collides_with_tree_append(other_tree.left_node) + \
+                    self.collides_with_tree_append(other_tree.right_node)
+        elif other_tree.is_leaf():
+            return self.left_node.collides_with_tree_append(other_tree) + \
+                self.right_node.collides_with_tree_append(other_tree)
+        else:
+            return self.left_node.collides_with_tree_append(other_tree.left_node) + \
+                self.left_node.collides_with_tree_append(other_tree.right_node) + \
+                self.right_node.collides_with_tree_append(other_tree.left_node) + \
+                self.right_node.collides_with_tree_append(other_tree.right_node)
 
     def update_bbs(self):
         """ Recursively update this bounding box and recurisvely call
@@ -211,11 +216,13 @@ class AABBNode (object):
             # print ("maxpos: (" + str(self.max_pt) +")")
             # print ("minpos: (" + str(self.min_pt) +")")
             ### /DEBUG
+            return self.leaf.bb_updated
 
-            return
-
-        self.left_node.update_bbs()
-        self.right_node.update_bbs()
+        left_updated = self.left_node.update_bbs()
+        right_updated = self.right_node.update_bbs()
+        
+        if (not left_updated) and (not right_updated):
+            return False
 
         self.min_pt[0] = min(self.left_node.min_pt[0],
                              self.right_node.min_pt[0])
@@ -230,13 +237,11 @@ class AABBNode (object):
         self.max_pt[2] = max(self.left_node.max_pt[2],
                              self.right_node.max_pt[2])
 
+        return True
+
         # for i in range(0,3):
         #     self.min_pt[i] = min(self.left_node.min_pt[i],
         #                          self.right_node.min_pt[i])
         #     self.max_pt[i] = max(self.left_node.max_pt[i],
         #                          self.right_node.max_pt[i])
 
-class dict_aabb_tree (object):
-    """ AABB Tree implementation using built in dictionary.
-    """
-    
