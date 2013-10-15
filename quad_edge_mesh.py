@@ -76,6 +76,7 @@ class QEMeshBuilder (object):
                         qee.tr_edge = qef.edges[-1]
                     else:
                         qee.tr_edge = qef.edges[face_eidx-1]
+                        
             if len(qef.edges) is not len(qef.verts):
                 raise ValueError("Uh oh")
             qem.add_face(qef)
