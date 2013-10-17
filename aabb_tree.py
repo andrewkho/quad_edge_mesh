@@ -28,6 +28,20 @@ class AABBTree (object):
         pt_min = other_face.min
         return self._tree.collides_with(pt_max, pt_min)
 
+    def collides_with_orthogonal_plane(self, orientation, position):
+        """ Check if this tree collides with orientation.
+        Orientation must be 0, 1, or 2 corresponding to the axis
+        parallel to the plane normal.
+        position is the coordinate of this plane along orientation axis
+        """
+        if orientation not in range(0,3):
+            raise TypeError("orientation must be 0, 1, or 2!")
+
+        collision_pairs = []
+        self._tree.collides_with_plane(orientation, position, collision_pairs)
+
+        return collision_pairs
+
     def collides_with_tree(self, other_tree):
         """ Return a list of pairs of faces whose aabb's collide """
         if not isinstance(other_tree, AABBTree):
@@ -42,17 +56,21 @@ class AABBTree (object):
         collision_pairs = []
         threads = []
         results = list()
-        res0 = threads.append(Thread(target=self._tree.left_node.left_node.collides_with_tree,
-                              args=(other_tree._tree, results)))
-        res1 = threads.append(Thread(target=self._tree.left_node.right_node.collides_with_tree,
-                              args=(other_tree._tree, results)))
-        res2 = threads.append(Thread(target=self._tree.right_node.left_node.collides_with_tree,
-                              args=(other_tree._tree, results)))
-        res3 = threads.append(Thread(target=self._tree.right_node.right_node.collides_with_tree,
-                              args=(other_tree._tree, results)))
+        threads.append(Thread(
+                target=self._tree.left_node.left_node.collides_with_tree,
+                args=(other_tree._tree, results)))
+        threads.append(Thread(
+                target=self._tree.left_node.right_node.collides_with_tree,
+                args=(other_tree._tree, results)))
+        threads.append(Thread(
+                target=self._tree.right_node.left_node.collides_with_tree,
+                args=(other_tree._tree, results)))
+        threads.append(Thread(
+                target=self._tree.right_node.right_node.collides_with_tree,
+                args=(other_tree._tree, results)))
 
         for t in threads:
-            t.start();
+            t.start()
         for t in threads:
             t.join()
 
@@ -161,27 +179,8 @@ class AABBNode (object):
         self.left_node = AABBNode(left_sorted_faces)
         self.right_node = AABBNode(right_sorted_faces)
 
-        # self.min_pt[0] = min(self.left_node.min_pt[0],
-        #                      self.right_node.min_pt[0])
-        # self.min_pt[1] = min(self.left_node.min_pt[1],
-        #                      self.right_node.min_pt[1])
-        # self.min_pt[2] = min(self.left_node.min_pt[2],
-        #                      self.right_node.min_pt[2])
-        # self.max_pt[0] = max(self.left_node.max_pt[0],
-        #                      self.right_node.max_pt[0])
-        # self.max_pt[1] = max(self.left_node.max_pt[1],
-        #                      self.right_node.max_pt[1])
-        # self.max_pt[2] = max(self.left_node.max_pt[2],
-        #                      self.right_node.max_pt[2])
-
         self.update_bb_from_children()
         
-        # for i in range(0,3):
-        #     self.min_pt[i] = min(self.left_node.min_pt[i],
-        #                       self.right_node.min_pt[i])
-        #     self.max_pt[i] = max(self.left_node.max_pt[i],
-        #                       self.right_node.max_pt[i])
-
     # def is_leaf(self):
     #     return self.left_node is None and self.right_node is None
 
@@ -198,6 +197,26 @@ class AABBNode (object):
         
         return (self.left_node.collides_with(pt_max, pt_min) or
                 self.right_node.collides_with(pt_max, pt_min))
+
+    def collides_with_plane(self, orientation, position, pairs):
+        """ Orientation must be 0, 1, or 2 (unchecked).
+        position is a float.
+        Checks if this bounding box and its children are intersected
+        by this plane.
+        pairs is a list of QEFaces (the leaves of this tree)
+        If yes, appends leaves to pairs
+        """
+        if (self.min_pt[orientation] > position or
+            self.max_pt[orientation] < position):
+            return
+
+        if self.is_leaf:
+            pairs.append(self.leaf)
+            return
+
+        self.left_node.collides_with_plane(orientation, position, pairs)
+        self.right_node.collides_with_plane(orientation, position, pairs)
+        return
 
     def collides_with_tree(self, other_tree, pairs):
         if (self.min_pt[0] > other_tree.max_pt[0] or
@@ -280,30 +299,10 @@ class AABBNode (object):
         
         if (not left_updated) and (not right_updated):
             return False
-
-        # self.min_pt[0] = min(self.left_node.min_pt[0],
-        #                      self.right_node.min_pt[0])
-        # self.min_pt[1] = min(self.left_node.min_pt[1],
-        #                      self.right_node.min_pt[1])
-        # self.min_pt[2] = min(self.left_node.min_pt[2],
-        #                      self.right_node.min_pt[2])
-        # self.max_pt[0] = max(self.left_node.max_pt[0],
-        #                      self.right_node.max_pt[0])
-        # self.max_pt[1] = max(self.left_node.max_pt[1],
-        #                      self.right_node.max_pt[1])
-        # self.max_pt[2] = max(self.left_node.max_pt[2],
-        #                      self.right_node.max_pt[2])
-
+        
         self.update_bb_from_children()
 
         return True
-
-        # for i in range(0,3):
-        #     self.min_pt[i] = min(self.left_node.min_pt[i],
-        #                          self.right_node.min_pt[i])
-        #     self.max_pt[i] = max(self.left_node.max_pt[i],
-        #                          self.right_node.max_pt[i])
-
         
     def update_bb_from_children(self):
         """ Update the bounding box of this node without descending tree.
@@ -320,3 +319,11 @@ class AABBNode (object):
                              self.right_node.max_pt[1])
         self.max_pt[2] = max(self.left_node.max_pt[2],
                              self.right_node.max_pt[2])
+        
+        # Rolled up loop below
+        # for i in range(0,3):
+        #     self.min_pt[i] = min(self.left_node.min_pt[i],
+        #                          self.right_node.min_pt[i])
+        #     self.max_pt[i] = max(self.left_node.max_pt[i],
+        #                          self.right_node.max_pt[i])
+
