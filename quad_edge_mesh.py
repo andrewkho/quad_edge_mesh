@@ -286,6 +286,7 @@ class QEVertex (object):
         self.mesh = parent_mesh
         self.index = index
         self.pos = [0, 0, 0]
+        self.is_updated = True
 
     def get_pos(self):
         return self.pos
@@ -312,7 +313,7 @@ class QEEdge (object):
         self.tr_edge = None
         self.bl_edge = None
         self.br_edge = None
-
+        
     def next_edge(self, face):
         """ Given a face, give the next QEEdge in a CCW direction around it.
         """
